@@ -1,33 +1,25 @@
 #!/usr/bin/env bash
 # A Bash script that prints information about subdomains with a unique structure.
 
-sudo apt update && sudo apt install -y dnsutils
+function get_sub_info {
+  local domain=$1
+  local subdomain=$2
+  local full_domain="${subdomain}.${domain}"
+  local record_info=$(dig +noall +answer ${full_domain} | awk '{print $4, $5}')
+  local record_type=$(echo $record_info | awk '{print $1}')
+  local record_ip=$(echo $record_info | awk '{print $2}')
 
-fetch_subdomain_info() {
-    local domain_name=$1
-    local sub=$2
-    local full_domain="$sub.$domain_name"
-    local result=$(dig +noall +answer $full_domain | awk '{print $4, $5}')
-    local record_type=$(echo $result | awk '{print $1}')
-    local record_value=$(echo $result | awk '{print $2}')
-
-    if [[ -n "$record_type" && -n "$record_value" ]]; then
-        echo "The subdomain $sub is a $record_type record and points to $record_value"
-    else
-        echo "No DNS record found for $sub.$domain_name"
-    fi
+  echo "The subdomain ${subdomain} is a ${record_type} record and points to ${record_ip}"
 }
 
 domain=$1
 subdomain=$2
 
-default_subdomains=("www" "lb-01" "web-01" "web-02")
-
 if [[ -z "$subdomain" ]]; then
-    for sub in "${default_subdomains[@]}"; do
-        fetch_subdomain_info $domain $sub
-    done
+  for sub in www lb-01 web-01 web-02; do
+    get_sub_info $domain $sub
+  done
 else
-    fetch_subdomain_info $domain $subdomain
+  get_sub_info $domain $subdomain
 fi
 
